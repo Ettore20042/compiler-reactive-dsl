@@ -16,6 +16,19 @@ class CGenerator:
         self.code.append("#include <stdio.h>")
         self.code.append("#include <stdbool.h>\n")
 
+        # Built-in functions for user input
+        self.code.append("int read_int() {")
+        self.code.append("    int val;")
+        self.code.append("    if (scanf(\"%d\", &val) != 1) return 0;")
+        self.code.append("    return val;")
+        self.code.append("}\n")
+
+        self.code.append("double read_real() {")
+        self.code.append("    double val;")
+        self.code.append("    if (scanf(\"%lf\", &val) != 1) return 0.0;")
+        self.code.append("    return val;")
+        self.code.append("}\n")
+
         # Forward declaration and implementation of tasks
         tasks = [n for n in ast if isinstance(n, TaskDecl)]
         for task in tasks:
@@ -100,7 +113,7 @@ class CGenerator:
 
     def map_type(self, t):
         if t == "int": return "int"
-        if t == "real": return "float"
+        if t == "real": return "double"
         if t == "bool": return "bool"
         if t == "string": return "char*"
         if t == "void": return "void"

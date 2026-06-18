@@ -63,14 +63,24 @@ class ASTTransformer(Transformer):
     def while_stmt(self, args):
         return WhileStmt(args[0], args[1:])
 
+    def _fold_binops(self, args):
+        left = args[0]
+        i = 1
+        while i < len(args):
+            op = str(args[i])
+            right = args[i+1]
+            left = BinOp(left, op, right)
+            i += 2
+        return left
+
     def comp_expr(self, args):
-        return BinOp(args[0], str(args[1]), args[2])
+        return self._fold_binops(args)
 
     def arith_expr(self, args):
-        return BinOp(args[0], str(args[1]), args[2])
+        return self._fold_binops(args)
 
     def term(self, args):
-        return BinOp(args[0], str(args[1]), args[2])
+        return self._fold_binops(args)
 
     def number(self, args):
         val = str(args[0])

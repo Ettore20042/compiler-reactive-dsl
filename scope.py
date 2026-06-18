@@ -10,13 +10,19 @@ class ScopeAnalyzer:
 
     def __init__(self):
         self.symbol_table = {}  # {var_name: type}
-        self.functions = {}     # {func_name: TaskDecl}
+        # Registra le funzioni built-in per l'input utente
+        self.functions = {
+            "read_int": TaskDecl("read_int", [], "int", []),
+            "read_real": TaskDecl("read_real", [], "real", [])
+        }     # {func_name: TaskDecl}
         self.current_func_ret_type = None
 
     def analyze(self, ast):
         """Prima passata: registra tutte le funzioni globalmente."""
         for stmt in ast:
             if isinstance(stmt, TaskDecl):
+                if stmt.name in ["read_int", "read_real"]:
+                    raise Exception(f"Errore: il nome '{stmt.name}' è riservato a una funzione built-in.")
                 if stmt.name in self.functions:
                     raise Exception(f"Errore: funzione (task) '{stmt.name}' già definita.")
                 self.functions[stmt.name] = stmt

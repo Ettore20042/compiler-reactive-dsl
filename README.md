@@ -32,6 +32,10 @@ Un piccolo compilatore in Python per un linguaggio DSL orientato a sistemi reatt
 - `typechecker.py` - controllo dei tipi
 - `codegen.py` - generazione del codice C
 - `example.txt` - esempio di programma nel DSL
+- `test_menu.txt` - programma DSL per il test del menu aritmetico (richiesto dai requisiti)
+- `test_compiler.py` - suite di test automatizzati per il compilatore
+- `specifiche_e_documentazione.md` - documentazione tecnica e specifiche formali del linguaggio
+- `relazione_ai.md` - relazione sull'utilizzo dell'intelligenza artificiale per l'esame
 
 ## Requisiti
 
