@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Compiled C binaries and outputs
+*.exe
+*.o
+*.out
+*.c.log
+/examples/*.c
+!/examples/test_menu.c
