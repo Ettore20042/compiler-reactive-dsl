@@ -1,93 +1,78 @@
-# DSL Compiler Project
+# roboLang Compiler
 
-Un piccolo compilatore in Python per un linguaggio DSL orientato a sistemi reattivi, automazione e robotica.
+Un compilatore in Python per **roboLang**, un linguaggio DSL orientato a sistemi reattivi, automazione e robotica.
 
-## Cosa fa
+Il compilatore effettua l'analisi sintattica, la validazione semantica (scope e tipi) e traduce il sorgente roboLang in codice sorgente C standard.
 
-- legge un file sorgente del DSL
-- esegue il parsing con **Lark**
-- costruisce un **AST**
-- fa **analisi semantica** con controllo di scope e tipi
-- genera codice target in **C**
+---
 
-## Funzionalità supportate
+## 1. Funzionalità di roboLang
 
-- variabili tipizzate: `int`, `real`, `bool`, `string`
-- assegnazioni con `set`
-- condizioni reattive con `when`
-- cicli con `while`
-- funzioni con `task`
-- chiamate di funzione
-- `return`
-- `log` per stampe di debug
+*   **Variabili Tipizzate:** Supporto per `int`, `real` (mappato a `double` in C), `bool` (`true`, `false`) e `string`.
+*   **Assegnazioni:** Modifica dello stato tramite il costrutto `set`.
+*   **Costrutti Reattivi:** Strutture decisionali guidate da eventi tramite `when`.
+*   **Cicli:** Strutture iterative definite tramite `while`.
+*   **Funzioni (Task):** Definizione di funzioni con parametri tipizzati e valore di ritorno tramite `task`.
+*   **I/O Built-in:** Funzioni pre-registrate `read_int()` e `read_real()` per gestire l'input utente da console.
+*   **Logging:** Output a console tramite `log()`.
 
-## Struttura del progetto
+---
 
-- `main.py` - punto di ingresso del compilatore
-- `grammar.py` - grammatica del linguaggio in Lark
-- `transformer.py` - conversione del parse tree in AST
-- `ast_nodes.py` - definizione dei nodi dell'AST
-- `semantic.py` - orchestrazione dell'analisi semantica
-- `scope.py` - controllo di scope e dichiarazioni
-- `typechecker.py` - controllo dei tipi
-- `codegen.py` - generazione del codice C
-- `example.txt` - esempio di programma nel DSL
-- `test_menu.txt` - programma DSL per il test del menu aritmetico (richiesto dai requisiti)
-- `test_compiler.py` - suite di test automatizzati per il compilatore
-- `specifiche_e_documentazione.md` - documentazione tecnica e specifiche formali del linguaggio
-- `relazione_ai.md` - relazione sull'utilizzo dell'intelligenza artificiale per l'esame
+## 2. Struttura del Progetto Organizzata
 
-## Requisiti
+Il progetto è strutturato in modo modulare ed ordinato:
 
-- Python 3.x
-- libreria `lark`
+*   `main.py` - Punto di ingresso principale del compilatore.
+*   `src/` - Pacchetto contenente il codice sorgente del compilatore:
+    *   `src/grammar.py` - Definizione formale della grammatica Lark del linguaggio.
+    *   `src/transformer.py` - Classe `ASTTransformer` per la conversione del Parse Tree in AST.
+    *   `src/ast_nodes.py` - Classi che definiscono i nodi dell'Abstract Syntax Tree.
+    *   `src/semantic.py` - Orchestratore dell'analisi semantica.
+    *   `src/scope.py` - Gestore di scope, dichiarazioni e funzioni.
+    *   `src/typechecker.py` - Controllore di tipi, compatibilità e cast impliciti.
+    *   `src/codegen.py` - Generatore di codice sorgente C.
+*   `examples/` - Esempi di codice scritti in roboLang:
+    *   `examples/example.robo` - Programma dimostrativo delle funzionalità base.
+    *   `examples/test_menu.robo` - Calcolatrice con menu aritmetico interattivo.
+*   `tests/` - Suite di test del compilatore:
+    *   `tests/test_compiler.py` - Suite completa di test unitari automatizzati.
+*   `specifiche_e_documentazione.md` - Documentazione tecnica dettagliata delle specifiche.
+*   `relazione_ai.md` - Relazione obbligatoria d'esame sull'uso dell'Intelligenza Artificiale.
+
+---
+
+## 3. Requisiti e Installazione
+
+Il compilatore richiede **Python 3.x** e la libreria parser **Lark**.
 
 Installa le dipendenze con:
-
 ```bash
 pip install -r requirements.txt
 ```
 
-## Come eseguire
+---
 
-Puoi compilare il file di esempio con:
+## 4. Istruzioni per l'Esecuzione
 
+### Compilazione di un sorgente roboLang
+Puoi compilare un file sorgente `.robo` specificandolo come argomento:
 ```bash
-python main.py
+python main.py examples/test_menu.robo
 ```
+Il compilatore analizzerà il file e salverà il codice generato in un file con lo stesso nome ma estensione `.c` (es. `examples/test_menu.c`).
 
-Oppure specificare un file diverso:
-
+### Compilazione ed esecuzione del codice C generato
+Per compilare il codice C generato in un eseguibile (richiede `gcc`):
 ```bash
-python main.py example.txt
+gcc examples/test_menu.c -o test_menu.exe
+.\test_menu.exe
 ```
 
-## Output
+---
 
-Il compilatore stampa:
-- il sorgente DSL letto
-- l'esito dell'analisi semantica
-- il codice C generato
+## 5. Suite di Test Automatizzati
 
-Inoltre salva il codice C in un file `.c` con lo stesso nome del sorgente, quando possibile.
-
-## Esempio
-
-```text
-var speed: int = 0;
-var max_speed: int = 100;
-var running: bool = true;
-
-task calculateSpeed(base: int, bonus: int) -> int {
-    return base + bonus;
-}
-
-when (speed < max_speed) {
-    set speed = calculateSpeed(speed, 10);
-}
-
-while (running == true) {
-    set running = false;
-}
+Puoi eseguire l'intera suite di 11 test unitari automatizzati per verificare la correttezza del compilatore:
+```bash
+python -m unittest tests/test_compiler.py
 ```
-
