@@ -10,8 +10,16 @@ class ASTNode:
     """Classe base di tutti i nodi dell'AST.
     Il metodo accept() implementa il Visitor Pattern: delega la logica
     al visitor (scope, typechecker, codegen) che sa come trattare ogni tipo di nodo."""
+    line = None
+    column = None
+
     def accept(self, visitor):
         return visitor.visit(self)
+        
+    def set_pos(self, line, column):
+        self.line = line
+        self.column = column
+        return self
 
 
 # --- NODI PER LE FUNZIONI ---

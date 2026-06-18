@@ -4,6 +4,7 @@ Seconda fase dell'analisi semantica: verifica la compatibilità dei tipi in tutt
 Controlla assegnazioni, chiamate a funzione, return, condizioni booleane e cast impliciti.
 """
 from .ast_nodes import *
+from .errors import RoboTypeError
 
 
 class TypeChecker:
@@ -26,7 +27,7 @@ class TypeChecker:
         method_name = f"visit_{type(node).__name__}"
         method = getattr(self, method_name, None)
         if method is None:
-            raise Exception(f"Errore: nodo non gestito in type checking: {type(node).__name__}")
+            raise RoboTypeError(f"Nodo non gestito in type checking: {type(node).__name__}", getattr(node, 'line', None), getattr(node, 'column', None))
         return method(node)
 
     # --- VISIT DEI NODI PRINCIPALI ---
@@ -56,8 +57,9 @@ class TypeChecker:
         Es: var x: int = "ciao";  → ERRORE (int != string)"""
         expr_type = self.get_expr_type(node.value)  # Calcola il tipo dell'espressione
         if not self._is_compatible(node.type, expr_type):
-            raise Exception(
-                f"Errore di tipo: '{node.name}' attende '{node.type}', ottenuto '{expr_type}'."
+            raise RoboTypeError(
+                f"Errore di tipo: '{node.name}' attende '{node.type}', ottenuto '{expr_type}'.",
+                node.line, node.column
             )
         # Registra la variabile nella symbol table per le istruzioni successive
         self.symbol_table[node.name] = node.type
@@ -68,28 +70,31 @@ class TypeChecker:
         var_type = self.symbol_table[node.name]     # Recupera il tipo dichiarato della variabile
         expr_type = self.get_expr_type(node.value)  # Calcola il tipo dell'espressione assegnata
         if not self._is_compatible(var_type, expr_type):
-            raise Exception(
-                f"Errore di tipo in assegnazione: '{node.name}' attende '{var_type}', ottenuto '{expr_type}'."
+            raise RoboTypeError(
+                f"Errore di tipo in assegnazione: '{node.name}' attende '{var_type}', ottenuto '{expr_type}'.",
+                node.line, node.column
             )
 
     def visit_CallStmt(self, node):
         """Verifica che i tipi degli argomenti passati corrispondano ai parametri formali."""
-        self._check_function_call(node.name, node.args)
+        self._check_function_call(node.name, node.args, node.line, node.column)
 
     def visit_ReturnStmt(self, node):
         """Verifica la compatibilità del tipo restituito con il tipo di ritorno del task.
         Se il return è vuoto (None), il task deve essere void."""
         if node.value is None:
             if self.current_func_ret_type != "void":
-                raise Exception(
-                    f"Errore: la funzione attende un ritorno di tipo '{self.current_func_ret_type}'."
+                raise RoboTypeError(
+                    f"La funzione attende un ritorno di tipo '{self.current_func_ret_type}'.",
+                    node.line, node.column
                 )
             return
 
         ret_type = self.get_expr_type(node.value)
         if not self._is_compatible(self.current_func_ret_type, ret_type):
-            raise Exception(
-                f"Errore di tipo: return attende '{self.current_func_ret_type}', ottenuto '{ret_type}'."
+            raise RoboTypeError(
+                f"Errore di tipo: return attende '{self.current_func_ret_type}', ottenuto '{ret_type}'.",
+                node.line, node.column
             )
 
     def visit_LogStmt(self, node):
@@ -102,7 +107,7 @@ class TypeChecker:
         """Verifica che la condizione di when/while sia di tipo bool, poi visita il corpo."""
         cond_type = self.get_expr_type(node.condition)
         if cond_type != 'bool':
-            raise Exception(f"Errore: condizione deve essere 'bool', ottenuto '{cond_type}'.")
+            raise RoboTypeError(f"La condizione deve essere 'bool', ottenuto '{cond_type}'.", node.condition.line, node.condition.column)
         for stmt in node.body:
             stmt.accept(self)
 
@@ -126,25 +131,27 @@ class TypeChecker:
             return True     # Cast implicito: int → real (widening)
         return False
 
-    def _check_function_call(self, func_name, args):
+    def _check_function_call(self, func_name, args, line=None, column=None):
         """Verifica una chiamata a funzione: controlla che la funzione esista,
         che il numero di argomenti sia corretto, e che ogni tipo corrisponda."""
         if func_name not in self.functions:
-            raise Exception(f"Errore: funzione '{func_name}' non dichiarata.")
+            raise RoboTypeError(f"Funzione '{func_name}' non dichiarata.", line, column)
         func = self.functions[func_name]
 
         # Controlla che il numero di argomenti passati corrisponda ai parametri formali
         if len(args) != len(func.params):
-            raise Exception(
-                f"Errore: funzione '{func_name}' aspetta {len(func.params)} argomenti, ottenuti {len(args)}."
+            raise RoboTypeError(
+                f"La funzione '{func_name}' aspetta {len(func.params)} argomenti, ottenuti {len(args)}.",
+                line, column
             )
         # Controlla che ogni argomento abbia un tipo compatibile col parametro corrispondente
         for i, arg in enumerate(args):
             arg_type = self.get_expr_type(arg)
             param_type = func.params[i].type
             if not self._is_compatible(param_type, arg_type):
-                raise Exception(
-                    f"Errore di tipo nell'argomento {i+1} di '{func_name}': atteso '{param_type}', ottenuto '{arg_type}'."
+                raise RoboTypeError(
+                    f"Errore di tipo nell'argomento {i+1} di '{func_name}': atteso '{param_type}', ottenuto '{arg_type}'.",
+                    arg.line, arg.column
                 )
         return func.ret_type  # Restituisce il tipo di ritorno della funzione (usato da get_expr_type)
 
@@ -156,7 +163,7 @@ class TypeChecker:
         method_name = f"expr_type_{type(node).__name__}"
         method = getattr(self, method_name, None)
         if method is None:
-            raise Exception(f"Errore: espressione non gestita: {type(node).__name__}")
+            raise RoboTypeError(f"Espressione non gestita: {type(node).__name__}", getattr(node, 'line', None), getattr(node, 'column', None))
         return method(node)
 
     def expr_type_Literal(self, node):
@@ -165,7 +172,7 @@ class TypeChecker:
 
     def expr_type_CallExpr(self, node):
         """Il tipo di una chiamata a funzione è il tipo di ritorno della funzione stessa."""
-        return self._check_function_call(node.name, node.args)
+        return self._check_function_call(node.name, node.args, node.line, node.column)
 
     def expr_type_VarMatch(self, node):
         """Il tipo di un riferimento a variabile si trova nella symbol table."""
@@ -190,19 +197,22 @@ class TypeChecker:
             elif l_type in numeric_types and r_type in numeric_types:
                 pass  # int vs real: confronto numerico valido
             else:
-                raise Exception(
-                    f"Errore di tipo: impossibile confrontare '{l_type}' con '{r_type}' usando '{node.op}'."
+                raise RoboTypeError(
+                    f"Impossibile confrontare '{l_type}' con '{r_type}' usando '{node.op}'.",
+                    node.line, node.column
                 )
             return 'bool'  # I confronti producono sempre un booleano
 
         # Operatori aritmetici (+, -, *, /): entrambi gli operandi devono essere numerici
         if l_type not in numeric_types:
-            raise Exception(
-                f"Errore di tipo: operatore '{node.op}' non applicabile al tipo '{l_type}'."
+            raise RoboTypeError(
+                f"Operatore '{node.op}' non applicabile al tipo '{l_type}'.",
+                node.left.line, node.left.column
             )
         if r_type not in numeric_types:
-            raise Exception(
-                f"Errore di tipo: operatore '{node.op}' non applicabile al tipo '{r_type}'."
+            raise RoboTypeError(
+                f"Operatore '{node.op}' non applicabile al tipo '{r_type}'.",
+                node.right.line, node.right.column
             )
 
         # Se almeno un operando è real, il risultato è real (promozione)

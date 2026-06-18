@@ -10,6 +10,7 @@ from src.grammar import grammar         # Stringa contenente la grammatica forma
 from src.transformer import ASTTransformer  # Trasforma il Parse Tree di Lark nel nostro AST personalizzato
 from src.semantic import SemanticAnalyzer   # Coordina l'analisi semantica (scope + tipi)
 from src.codegen import CGenerator          # Visita l'AST e produce il codice sorgente C
+from src.errors import CompilerError        # Errori custom per il compilatore
 
 if __name__ == '__main__':
 
@@ -34,20 +35,27 @@ if __name__ == '__main__':
 
     # --- FASE 1: Parsing (Analisi Sintattica) ---
     # Crea un parser LALR(1) a partire dalla grammatica EBNF definita in grammar.py
-    parser = Lark(grammar, parser='lalr')
-    # Analizza il codice sorgente e produce un Parse Tree (albero sintattico grezzo di Lark)
-    tree = parser.parse(source_code)
-    # Converte il Parse Tree in un AST (Abstract Syntax Tree) composto dai nostri nodi tipizzati
-    ast = ASTTransformer().transform(tree)
+    # propagate_positions=True permette al transformer di leggere le linee e le colonne
+    parser = Lark(grammar, parser='lalr', propagate_positions=True)
+    
+    try:
+        # Analizza il codice sorgente e produce un Parse Tree (albero sintattico grezzo di Lark)
+        tree = parser.parse(source_code)
+        # Converte il Parse Tree in un AST (Abstract Syntax Tree) composto dai nostri nodi tipizzati
+        ast = ASTTransformer().transform(tree)
 
-    # --- FASE 2: Analisi Semantica ---
-    # Esegue in sequenza: 1) Scope Analysis (dichiarazioni e visibilità)
-    #                      2) Type Checking (compatibilità dei tipi)
-    # Se trova errori (variabile non dichiarata, tipo incompatibile, ecc.) lancia un'eccezione
-    print("\n--- Analisi Semantica ---")
-    analyzer = SemanticAnalyzer()
-    analyzer.analyze(ast)
-    print("Analisi semantica completata con successo.")
+        # --- FASE 2: Analisi Semantica ---
+        # Esegue in sequenza: 1) Scope Analysis (dichiarazioni e visibilità)
+        #                      2) Type Checking (compatibilità dei tipi)
+        # Se trova errori (variabile non dichiarata, tipo incompatibile, ecc.) lancia un'eccezione
+        print("\n--- Analisi Semantica ---")
+        analyzer = SemanticAnalyzer()
+        analyzer.analyze(ast)
+        print("Analisi semantica completata con successo.")
+        
+    except CompilerError as e:
+        print(f"\n[ERRORE DI COMPILAZIONE] {e}")
+        sys.exit(1)
 
     # --- FASE 3: Generazione del Codice C ---
     # Il CGenerator visita ogni nodo dell'AST e lo traduce nella corrispondente istruzione C

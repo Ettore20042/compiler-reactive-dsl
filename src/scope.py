@@ -6,6 +6,7 @@ siano usati solo nei contesti in cui sono visibili (scope).
 Visita anche le sotto-espressioni per intercettare variabili non dichiarate in fase 1.
 """
 from .ast_nodes import *
+from .errors import SemanticError
 
 
 class ScopeAnalyzer:
@@ -34,10 +35,10 @@ class ScopeAnalyzer:
             if isinstance(stmt, TaskDecl):
                 # Impedisce la ridefinizione dei nomi built-in riservati
                 if stmt.name in ["read_int", "read_real"]:
-                    raise Exception(f"Errore: il nome '{stmt.name}' è riservato a una funzione built-in.")
+                    raise SemanticError(f"Il nome '{stmt.name}' è riservato a una funzione built-in.", stmt.line, stmt.column)
                 # Impedisce la dichiarazione duplicata di funzioni
                 if stmt.name in self.functions:
-                    raise Exception(f"Errore: funzione (task) '{stmt.name}' già definita.")
+                    raise SemanticError(f"Funzione (task) '{stmt.name}' già definita.", stmt.line, stmt.column)
                 self.functions[stmt.name] = stmt
 
         # --- PASSATA 2: Analisi di scope su ogni statement ---
@@ -50,7 +51,7 @@ class ScopeAnalyzer:
         method_name = f"visit_{type(node).__name__}"
         method = getattr(self, method_name, None)
         if method is None:
-            raise Exception(f"Errore: nodo non gestito in scope analysis: {type(node).__name__}")
+            raise SemanticError(f"Nodo non gestito in scope analysis: {type(node).__name__}", getattr(node, 'line', None), getattr(node, 'column', None))
         return method(node)
 
     # --- VISITA RICORSIVA DELLE ESPRESSIONI ---
@@ -63,11 +64,11 @@ class ScopeAnalyzer:
         if isinstance(expr, VarMatch):
             # Controlla che la variabile referenziata esista nello scope corrente
             if expr.name not in self.symbol_table:
-                raise Exception(f"Errore: variabile '{expr.name}' non dichiarata.")
+                raise SemanticError(f"Variabile '{expr.name}' non dichiarata.", expr.line, expr.column)
         elif isinstance(expr, CallExpr):
             # Controlla che la funzione chiamata esista
             if expr.name not in self.functions:
-                raise Exception(f"Errore: funzione '{expr.name}' non dichiarata.")
+                raise SemanticError(f"Funzione '{expr.name}' non dichiarata.", expr.line, expr.column)
             # Controlla ricorsivamente ogni argomento della chiamata
             for arg in expr.args:
                 self._check_expr(arg)
@@ -89,7 +90,7 @@ class ScopeAnalyzer:
         seen_params = set()
         for p in node.params:
             if p.name in seen_params:
-                raise Exception(f"Errore: parametro '{p.name}' duplicato nel task '{node.name}'.")
+                raise SemanticError(f"Parametro '{p.name}' duplicato nel task '{node.name}'.", p.line, p.column)
             seen_params.add(p.name)
             self.symbol_table[p.name] = p.type  # Registra il parametro nello scope locale
 
@@ -108,20 +109,20 @@ class ScopeAnalyzer:
         # Controlla le espressioni nell'inizializzatore PRIMA di registrare la variabile
         self._check_expr(node.value)
         if node.name in self.symbol_table:
-            raise Exception(f"Errore: variabile '{node.name}' già dichiarata.")
+            raise SemanticError(f"Variabile '{node.name}' già dichiarata.", node.line, node.column)
         self.symbol_table[node.name] = node.type  # Aggiunge {nome: tipo} alla symbol table
 
     def visit_SetStmt(self, node):
         """Verifica che la variabile assegnata esista e controlla le sotto-espressioni."""
         if node.name not in self.symbol_table:
-            raise Exception(f"Errore: variabile '{node.name}' non dichiarata.")
+            raise SemanticError(f"Variabile '{node.name}' non dichiarata.", node.line, node.column)
         # Controlla che tutte le variabili nell'espressione del valore siano dichiarate
         self._check_expr(node.value)
 
     def visit_CallStmt(self, node):
         """Verifica che la funzione chiamata esista e controlla le sotto-espressioni degli argomenti."""
         if node.name not in self.functions:
-            raise Exception(f"Errore: funzione '{node.name}' non dichiarata.")
+            raise SemanticError(f"Funzione '{node.name}' non dichiarata.", node.line, node.column)
         # Controlla ricorsivamente ogni argomento
         for arg in node.args:
             self._check_expr(arg)
@@ -129,7 +130,7 @@ class ScopeAnalyzer:
     def visit_ReturnStmt(self, node):
         """Verifica che il return sia dentro un task e controlla l'espressione di ritorno."""
         if self.current_func_ret_type is None:
-            raise Exception("Errore: 'return' usato fuori da un task/funzione.")
+            raise SemanticError("'return' usato fuori da un task/funzione.", node.line, node.column)
         # Controlla l'espressione di ritorno se presente
         if node.value is not None:
             self._check_expr(node.value)
@@ -154,8 +155,8 @@ class ScopeAnalyzer:
         """Visita il corpo di un ciclo while e controlla la condizione."""
         self._visit_conditional_loop(node)
 
-    def get_var_type(self, var_name):
+    def get_var_type(self, var_name, line=None, column=None):
         """Utility: restituisce il tipo di una variabile o solleva errore se non esiste."""
         if var_name in self.symbol_table:
             return self.symbol_table[var_name]
-        raise Exception(f"Errore: variabile '{var_name}' non dichiarata.")
+        raise SemanticError(f"Variabile '{var_name}' non dichiarata.", line, column)
