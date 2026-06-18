@@ -47,7 +47,6 @@ expr_list: expr ("," expr)*                        // Lista di espressioni separ
 ?arith_expr: term (OP_ADD term)*                   // Addizione e sottrazione (priorità bassa)
 ?term: factor (OP_MUL factor)*                     // Moltiplicazione e divisione (priorità alta)
 
-# Factor: l'unità atomica di un'espressione
 # Le frecce "->" mappano i token a nomi di regola usati dal Transformer
 ?factor: NUMBER          -> number                 // Numero intero o decimale
        | call_expr                                 // Chiamata a funzione come espressione (usa il ritorno)
@@ -70,4 +69,6 @@ OP_REL: ">" | "<" | ">=" | "<=" | "==" | "!="     // Operatori relazionali (prod
 %import common.ESCAPED_STRING                       // Stringhe con escape tra virgolette doppie
 %import common.WS                                   // Whitespace (spazi, tab, newline)
 %ignore WS                                          // Ignora gli spazi bianchi nel parsing
+%import common.SH_COMMENT                           // Commenti stile Python/Shell (# commento)
+%ignore SH_COMMENT                                  // Ignora i commenti nel parsing
 """

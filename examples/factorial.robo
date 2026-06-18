@@ -1,0 +1,16 @@
+# Programma roboLang per calcolare il fattoriale ricorsivo
+
+task fattoriale(n: int) -> int {
+    when (n <= 1) {
+        return 1;
+    }
+    return n * fattoriale(n - 1);
+}
+
+var numero: int = 5;
+
+log("=== CALCOLO FATTORIALE RICORSIVO ===");
+log("Il fattoriale di:");
+log(numero);
+log("Risultato:");
+log(fattoriale(numero));

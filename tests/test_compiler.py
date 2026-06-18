@@ -264,5 +264,22 @@ class TestRoboLangCompiler(unittest.TestCase):
         analyzer.analyze(ast)
         self.assertEqual(analyzer.symbol_table["x"], "real")
 
+    def test_comments_supported(self):
+        """Verifica che i commenti stile shell (#) vengano ignorati dal compilatore."""
+        source = """
+        # Questo è un commento iniziale
+        var x: int = 42; # commento sulla riga di codice
+        # un altro commento
+        var y: real = 3.14;
+        """
+        ast = self.parse_to_ast(source)
+        self.assertEqual(len(ast), 2)  # Solo le due dichiarazioni di variabili
+        self.assertEqual(ast[0].name, 'x')
+        self.assertEqual(ast[1].name, 'y')
+
+        # Verifica che si compili senza problemi
+        analyzer = SemanticAnalyzer()
+        analyzer.analyze(ast)
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,8 @@
+# Programma roboLang per calcolare i multipli di 3 fino a 100
+
+var current: int = 3;
+
+while (current <= 100) {
+    log(current);
+    set current = current + 3;
+}

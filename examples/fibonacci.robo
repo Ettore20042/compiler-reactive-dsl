@@ -1,0 +1,17 @@
+# Programma roboLang per generare la successione di Fibonacci
+
+var a: int = 0;
+var b: int = 1;
+var temp: int = 0;
+var count: int = 0;
+
+log("=== SUCCESSIONE DI FIBONACCI ===");
+log("I primi 15 numeri della successione:");
+
+while (count < 15) {
+    log(a);
+    set temp = a + b;
+    set a = b;
+    set b = temp;
+    set count = count + 1;
+}
