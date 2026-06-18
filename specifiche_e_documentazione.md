@@ -41,7 +41,11 @@ return_stmt: "return" expr? ";"
 log_stmt: "log" "(" expr ")" ";"
 
 TYPE: "int" | "real" | "bool" | "string"
+
+%import common.SH_COMMENT
+%ignore SH_COMMENT
 ```
+I commenti a riga singola sono introdotti dal carattere `#` e vengono scartati durante il parsing grazie alla direttiva `%ignore SH_COMMENT`.
 
 ### 1.3 Funzioni Built-in per l'Input Utente
 Per consentire l'interattività e l'acquisizione di parametri in tempo reale, il compilatore pre-registra nello scope globale due funzioni built-in:
@@ -64,21 +68,25 @@ graph LR
 ```
 
 1.  **Parsing ([src/grammar.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/grammar.py)):** Il parser LALR(1) di Lark legge il sorgente ed effettua l'analisi sintattica generando un albero di parsing.
-2.  **Generazione dell'AST ([src/transformer.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/transformer.py) e [src/ast_nodes.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/ast_nodes.py)):** Un trasformatore converte l'albero sintattico in un Abstract Syntax Tree. Le espressioni con precedenze multiple (es. precedenza degli operatori aritmetici) e con molteplici termini vengono risolte e strutturate ricorsivamente a sinistra tramite la funzione `_fold_binops`.
+2.  **Generazione dell'AST ([src/transformer.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/transformer.py) e [src/ast_nodes.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/ast_nodes.py)):** Un trasformatore converte l'albero sintattico in un Abstract Syntax Tree. Le espressioni con precedenze multiple (es. precedenza degli operatori aritmetici) e con molteplici termini vengono risolte e strutturate ricorsivamente a sinistra tramite la funzione `_fold_binops`. Viene inoltre gestita la notazione esponenziale (`5e3`) promuovendola a tipo `real`.
 3.  **Analisi Semantica ([src/semantic.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/semantic.py)):**
-    *   **Scope Checking ([src/scope.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/scope.py)):** Gestisce la tabella dei simboli locale e globale, controlla la visibilità delle variabili e impedisce la ridefinizione illecita dei nomi di funzioni built-in riservate.
-    *   **Type Checking ([src/typechecker.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/typechecker.py)):** Controlla la compatibilità dei tipi. Consente la coercizione implicita da `int` a `real` (es. assegnare un intero a un reale). Gestisce correttamente la dichiarazione di variabili locali a livello di funzioni/task.
-4.  **Generazione del Codice ([src/codegen.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/codegen.py)):** Un visitor traduce l'AST validato in codice C. Introduce l'inclusione di `<stdio.h>` e `<stdbool.h>`, implementa in C i built-in `read_int` e `read_real` e traduce i blocchi decisionali `when` in `if` C.
+    *   **Visitor Pattern & Dispatch Dinamico:** Tutte le analisi e la generazione del codice sfruttano il Visitor Pattern. Ogni nodo in [ast_nodes.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/ast_nodes.py) espone `accept(visitor)` che delega il dispatch dinamico a runtime tramite la funzione `getattr(self, f"visit_{...}")`.
+    *   **Scope Checking ([src/scope.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/scope.py)):** Esegue l'analisi in **due passate** per registrare le firme delle funzioni prima dei corpi (permettendo la mutua ricorsione). Gestisce la tabella dei simboli locale e globale, controlla lo shadowing dei parametri (tramite set locale dedicato), e impedisce l'uso di variabili non dichiarate anche all'interno di espressioni complesse (`_check_expr`).
+    *   **Type Checking ([src/typechecker.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/typechecker.py)):** Controlla la compatibilità dei tipi. Consente la coercizione implicita da `int` a `real` (widening). Valida la tipizzazione forte degli operandi per evitare operazioni non numeriche (es. stringa + numero).
+4.  **Generazione del Codice ([src/codegen.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/src/codegen.py)):** Un visitor traduce l'AST in codice C99. Raccoglie preventivamente tutti i task emettendo le **forward declarations** (prototipi) in cima al file per evitare warning di dichiarazione implicita da `gcc`. Implementa poi le funzioni built-in ed effettua il mapping diretto dei tipi (`real` -> `double`, `string` -> `char*`).
 
 ---
 
 ## 3. Suite di Test e Verifica
 
-La suite di test integrata in [tests/test_compiler.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/tests/test_compiler.py) verifica:
+La suite di test integrata in [tests/test_compiler.py](file:///C:/Users/ettor/PycharmProjects/PythonProject1/tests/test_compiler.py) conta **17** test automatizzati e verifica:
 *   Corretto folding delle espressioni lunghe (associatività a sinistra).
 *   Precedenza degli operatori (es. `1 + 2 * 3` viene tradotto con la corretta precedenza moltiplicativa).
-*   Coercizione di tipo da `int` a `real`.
-*   Risoluzione degli errori semantici (variabili non dichiarate, parametri duplicati, tipi incompatibili, mismatch del tipo di ritorno).
+*   Coercizione di tipo da `int` a `real` e classificazione dei valori esponenziali.
+*   Risoluzione degli errori semantici (variabili non dichiarate in sotto-espressioni, parametri duplicati, tipi incompatibili, mismatch del tipo di ritorno).
+*   Shadowing valido di variabili globali tramite parametri locali.
+*   Corretto inserimento di forward declarations ed eliminazione di avvisi di implicit declaration.
+*   Esclusione e supporto sintattico per i commenti `#`.
 *   Generazione sintatticamente corretta del codice C.
 
 Per eseguire l'intera suite:

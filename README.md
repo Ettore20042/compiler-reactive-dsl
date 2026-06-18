@@ -15,6 +15,7 @@ Il compilatore effettua l'analisi sintattica, la validazione semantica (scope e 
 *   **Funzioni (Task):** Definizione di funzioni con parametri tipizzati e valore di ritorno tramite `task`.
 *   **I/O Built-in:** Funzioni pre-registrate `read_int()` e `read_real()` per gestire l'input utente da console.
 *   **Logging:** Output a console tramite `log()`.
+*   **Commenti:** Supporto per commenti a riga singola che iniziano con `#` (stile Python/Shell).
 
 ---
 
@@ -34,10 +35,14 @@ Il progetto è strutturato in modo modulare ed ordinato:
 *   `examples/` - Esempi di codice scritti in roboLang:
     *   `examples/example.robo` - Programma dimostrativo delle funzionalità base.
     *   `examples/test_menu.robo` - Calcolatrice con menu aritmetico interattivo.
+    *   `examples/multiples.robo` - Stampa dei multipli di 3 fino a 100.
+    *   `examples/fibonacci.robo` - Generazione iterativa della successione di Fibonacci.
+    *   `examples/factorial.robo` - Calcolo ricorsivo del fattoriale.
 *   `tests/` - Suite di test del compilatore:
     *   `tests/test_compiler.py` - Suite completa di test unitari automatizzati.
 *   `specifiche_e_documentazione.md` - Documentazione tecnica dettagliata delle specifiche.
-*   `relazione_ai.md` - Relazione obbligatoria d'esame sull'uso dell'Intelligenza Artificiale.
+*   `relazione_ai.md` - Relazione d'esame sull'uso dell'Intelligenza Artificiale.
+*   `discorso_esame.md` - Testo completo consigliato per l'esposizione orale dell'esame.
 
 ---
 
@@ -72,7 +77,7 @@ gcc examples/test_menu.c -o test_menu.exe
 
 ## 5. Suite di Test Automatizzati
 
-Puoi eseguire l'intera suite di 11 test unitari automatizzati per verificare la correttezza del compilatore:
+Puoi eseguire l'intera suite di **17** test unitari automatizzati per verificare la correttezza del compilatore:
 ```bash
 python -m unittest tests/test_compiler.py
 ```
