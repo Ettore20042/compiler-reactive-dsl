@@ -67,7 +67,7 @@ class ASTTransformer(Transformer):
         """Chiamata a funzione usata come STATEMENT (il ritorno è ignorato).
         Es: printResult(42);"""
         name = str(args[0])
-        call_args = args[1] if len(args) > 1 and isinstance(args[1], list) else []
+        call_args = args[1] if len(args) > 1 and isinstance(args[1], list) else []  #Nella lista dei figli c'è effettivamente un oggetto di tipo lista ?Se la risposta è si li assegna a call args,altrimenti (es.read_int()) assegna a call args una lista vuota
         return CallStmt(name, call_args).set_pos(meta.line, meta.column)
 
     # --- STATEMENT ---
@@ -115,7 +115,7 @@ class ASTTransformer(Transformer):
         return left
 
     def comp_expr(self, meta, args):
-        """Espressione di confronto (>, <, ==, ecc.). Usa il folding per gestire catene."""
+        """Espressione di confronto (>, <, ==, ecc.). Usa il folding(ripiegamento) per gestire catene."""
         return self._fold_binops(args, meta)
 
     def arith_expr(self, meta, args):

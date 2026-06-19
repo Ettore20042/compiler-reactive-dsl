@@ -27,7 +27,7 @@ class ASTNode:
 class TaskDecl(ASTNode):
     """Dichiarazione di una funzione (task) del linguaggio roboLang.
     Es: task sum(a: int, b: int) -> int { return a + b; }"""
-    def __init__(self, name, params, ret_type, body):
+    def __init__(self, name, params, ret_type, body):   # Salvato nell oggetto self
         self.name = name          # Nome della funzione (es. "sum")
         self.params = params      # Lista di oggetti Param (parametri formali)
         self.ret_type = ret_type  # Tipo di ritorno ("int", "real", "void", ecc.)

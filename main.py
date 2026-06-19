@@ -22,7 +22,8 @@ if __name__ == '__main__':
     else:
         input_file = 'examples/example.robo'
 
-    # Apre il file sorgente e ne legge l'intero contenuto come stringa
+    # Ap
+    # re il file sorgente e ne legge l'intero contenuto come stringa
     try:
         with open(input_file, 'r') as f:
             source_code = f.read()
@@ -49,8 +50,8 @@ if __name__ == '__main__':
         #                      2) Type Checking (compatibilità dei tipi)
         # Se trova errori (variabile non dichiarata, tipo incompatibile, ecc.) lancia un'eccezione
         print("\n--- Analisi Semantica ---")
-        analyzer = SemanticAnalyzer()
-        analyzer.analyze(ast)
+        analyzer = SemanticAnalyzer()      #Creo un oggetto
+        analyzer.analyze(ast)               #Chiamo il metodo dell'oggetto
         print("Analisi semantica completata con successo.")
         
     except CompilerError as e:

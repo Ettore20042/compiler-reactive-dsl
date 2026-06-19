@@ -23,7 +23,7 @@ class ScopeAnalyzer:
             "read_real": TaskDecl("read_real", [], "real", [])
         }                           # Dizionario {nome_funzione: TaskDecl}
 
-        self.current_func_ret_type = None  # Tipo di ritorno del task in cui ci troviamo (None se globale)
+        self.current_func_ret_type = None  # Tipo di ritorno del task in cui ci troviamo (None se globale) Lo utilizziamo per verificare che il valore restituito sia coerente con quello dichiarato nella firma
 
     def analyze(self, ast):
         """Esegue l'analisi in DUE PASSATE:
@@ -34,13 +34,12 @@ class ScopeAnalyzer:
         for stmt in ast:
             if isinstance(stmt, TaskDecl):
                 # Impedisce la ridefinizione dei nomi built-in riservati
-                if stmt.name in ["read_int", "read_real"]:
+                if stmt.name in ["read_int", "read_real"]:        #non vogliamo sovrascrivere le funzioni built-in
                     raise SemanticError(f"Il nome '{stmt.name}' è riservato a una funzione built-in.", stmt.line, stmt.column)
                 # Impedisce la dichiarazione duplicata di funzioni
                 if stmt.name in self.functions:
                     raise SemanticError(f"Funzione (task) '{stmt.name}' già definita.", stmt.line, stmt.column)
-                self.functions[stmt.name] = stmt
-
+                self.functions[stmt.name] = stmt        #hash con key= a stmt.name e value=stmt , Salviamo l'intero oggetto
         # --- PASSATA 2: Analisi di scope su ogni statement ---
         for stmt in ast:
             stmt.accept(self)  # Invoca il visit corretto tramite il Visitor Pattern
@@ -48,7 +47,7 @@ class ScopeAnalyzer:
     def visit(self, node):
         """Dispatch dinamico: dato un nodo, trova e chiama il metodo visit_NomeClasse corretto.
         Es: per un nodo VarDecl chiama self.visit_VarDecl(node)"""
-        method_name = f"visit_{type(node).__name__}"
+        method_name = f"visit_{type(node).__name__}" #Guarda il nodo che gli hai passato e se è un istanza di VarDecl,restituisce la stringa vatDecl
         method = getattr(self, method_name, None)
         if method is None:
             raise SemanticError(f"Nodo non gestito in scope analysis: {type(node).__name__}", getattr(node, 'line', None), getattr(node, 'column', None))
@@ -120,12 +119,12 @@ class ScopeAnalyzer:
         self._check_expr(node.value)
 
     def visit_CallStmt(self, node):
-        """Verifica che la funzione chiamata esista e controlla le sotto-espressioni degli argomenti."""
+        """Verifica che la funzione chiamata esista e controlla le sotto-espressioni degli argomenti. nome_task(argomenti)"""
         if node.name not in self.functions:
             raise SemanticError(f"Funzione '{node.name}' non dichiarata.", node.line, node.column)
         # Controlla ricorsivamente ogni argomento
         for arg in node.args:
-            self._check_expr(arg)
+            self._check_expr(arg) #Si assicura che le variabili usate come argomenti siano visibili
 
     def visit_ReturnStmt(self, node):
         """Verifica che il return sia dentro un task e controlla l'espressione di ritorno."""
@@ -136,7 +135,7 @@ class ScopeAnalyzer:
             self._check_expr(node.value)
 
     def visit_LogStmt(self, node):
-        """Controlla le sotto-espressioni dell'argomento di log."""
+        """Controlla che le sotto-espressioni dell'argomento di log siano dichiarate."""
         self._check_expr(node.expr)
 
     def _visit_conditional_loop(self, node):
@@ -144,7 +143,7 @@ class ScopeAnalyzer:
         Lo scope NON cambia (when e while non creano un nuovo ambito di visibilità)."""
         # Controlla che tutte le variabili nella condizione siano dichiarate
         self._check_expr(node.condition)
-        for stmt in node.body:
+        for stmt in node.body:  #Sfrutta il Visitor Patttern per far si che ogni istruzione contenuta nel corpo venga analizzata dal metodo di visita corretta
             stmt.accept(self)
 
     def visit_WhenStmt(self, node):
@@ -156,7 +155,7 @@ class ScopeAnalyzer:
         self._visit_conditional_loop(node)
 
     def get_var_type(self, var_name, line=None, column=None):
-        """Utility: restituisce il tipo di una variabile o solleva errore se non esiste."""
+        """Utility: restituisce il tipo di una variabile o solleva errore se non esiste. Recupero il tipo di una variabile dal nome interrogando la simbol table"""
         if var_name in self.symbol_table:
             return self.symbol_table[var_name]
         raise SemanticError(f"Variabile '{var_name}' non dichiarata.", line, column)
