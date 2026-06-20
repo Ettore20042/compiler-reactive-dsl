@@ -10,7 +10,7 @@ class CGenerator:
     """Visitor che traduce ogni nodo dell'AST nella corrispondente sintassi C."""
 
     def __init__(self):
-        self.code = []              # Lista di stringhe: ogni elemento è una riga del file C
+        self.code = []              # Lista di stringhe: ogni elemento è una riga del file C, buffer generale
         self.indent_level = 1       # Livello di indentazione corrente (1 = dentro main)
 
     def indent(self):
@@ -58,7 +58,7 @@ class CGenerator:
 
         # Genera le implementazioni complete dei task
         for task in tasks:
-            task.accept(self)       # Invoca visit_TaskDecl per ogni task
+            task.accept(self)       # Invoca visit_TaskDecl per ogni task------ Oggetto della classe TaskDecl, self è il CGenerator, vede accept e salta dentro task
             self.code.append("")    # Riga vuota tra le funzioni per leggibilità
 
         # Genera la funzione main() contenente gli statement globali
@@ -87,7 +87,7 @@ class CGenerator:
         Es: task sum(a: real, b: real) -> real  →  double sum(double a, double b)"""
         c_ret_type = self.map_type(node.ret_type)   # Converte il tipo roboLang in tipo C
         # Costruisce la lista dei parametri con i tipi C (es. "double a, double b")
-        params_str = ", ".join([f"{self.map_type(p.type)} {p.name}" for p in node.params])
+        params_str = ", ".join([f"{self.map_type(p.type)} {p.name}" for p in node.params])    #Per ogni parametro converte il tipo da RoboLang in C , poi prende il nome e lo aggiunge alla lista, poi li mette insieme
         if not params_str:
             params_str = "void"     # In C le funzioni senza parametri usano (void)
         self.code.append(f"{c_ret_type} {node.name}({params_str}) {{")
@@ -100,8 +100,8 @@ class CGenerator:
     def visit_CallStmt(self, node):
         """Genera una chiamata a funzione C come statement.
         Es: printResult(42);"""
-        args_str = ", ".join([self.expr_to_c(arg) for arg in node.args])
-        self.code.append(f"{self.indent()}{node.name}({args_str});")
+        args_str = ", ".join([self.expr_to_c(arg) for arg in node.args])    #per ogni argomento che gli passiamo alla funzione , viene chiamato lo smistatore di espressioni che traduce in C,prende i vari pezzi e li mette insieme
+        self.code.append(f"{self.indent()}{node.name}({args_str});")   #inserisce spazi vuoti iniziali,nome funzione e argomenti interni
 
     def visit_ReturnStmt(self, node):
         """Genera un return C con o senza valore."""
@@ -128,10 +128,10 @@ class CGenerator:
     def visit_VarDecl(self, node):
         """Genera una dichiarazione di variabile C con inizializzazione.
         Es: var speed: int = 0;  →  int speed = 0;"""
-        c_type = self.map_type(node.type)
-        val = self.expr_to_c(node.value)
+        c_type = self.map_type(node.type)         #prende il tipo di variabile in roboLang e lo converte in tipo C utilizzando la map_type
+        val = self.expr_to_c(node.value)          #prende la parte destra della variabile e la traduce in C usando lo smistatore delle espressioni
         if c_type == "char*":
-            self.code.append(f"{self.indent()}char* {node.name} = {val};")
+            self.code.append(f"{self.indent()}char* {node.name} = {val};")        #separa il trattamento dei tipi primitivi con quelli puntatore
         else:
             self.code.append(f"{self.indent()}{c_type} {node.name} = {val};")
 
@@ -175,7 +175,7 @@ class CGenerator:
 
     def expr_to_c(self, node):
         """Dispatch dinamico per tradurre un nodo espressione nella sua rappresentazione C."""
-        method_name = f"expr_to_c_{type(node).__name__}"
+        method_name = f"expr_to_c_{type(node).__name__}"    #Guarda il nome della classe, se gli passo un nodo di tipo BinOP la riga genere expr_to_c_BinOP, poi il gettattr cerca all'interno della classe se esiste un metodo con quel nome esatto
         method = getattr(self, method_name, None)
         if method is None:
             raise Exception(f"Errore: espressione non gestita in codegen: {type(node).__name__}")
