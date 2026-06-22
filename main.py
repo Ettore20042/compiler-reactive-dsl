@@ -42,6 +42,8 @@ if __name__ == '__main__':
     try:
         # Analizza il codice sorgente e produce un Parse Tree (albero sintattico grezzo di Lark)
         tree = parser.parse(source_code)
+        # print("\n--- Parse Tree ---")
+        # print(tree.pretty())
         # Converte il Parse Tree in un AST (Abstract Syntax Tree) composto dai nostri nodi tipizzati
         ast = ASTTransformer().transform(tree)
 

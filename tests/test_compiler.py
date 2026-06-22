@@ -15,7 +15,7 @@ from src.ast_nodes import *
 class TestRoboLangCompiler(unittest.TestCase):
 
     def setUp(self):
-        self.parser = Lark(grammar, parser='lalr')
+        self.parser = Lark(grammar, parser='lalr', propagate_positions=True)
         self.transformer = ASTTransformer()
 
     def parse_to_ast(self, source):
@@ -109,7 +109,7 @@ class TestRoboLangCompiler(unittest.TestCase):
         analyzer = SemanticAnalyzer()
         with self.assertRaises(Exception) as ctx:
             analyzer.analyze(ast)
-        self.assertIn("parametro 'a' duplicato", str(ctx.exception))
+        self.assertIn("Parametro 'a' duplicato", str(ctx.exception))
 
     def test_void_function_and_empty_return(self):
         """Verifica che un task void con return vuoto o senza return passi i controlli semantici."""
