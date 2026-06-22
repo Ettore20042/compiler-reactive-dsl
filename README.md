@@ -42,7 +42,7 @@ Il progetto è strutturato in modo modulare ed ordinato:
     *   `tests/test_compiler.py` - Suite completa di test unitari automatizzati.
 *   `specifiche_e_documentazione.md` - Documentazione tecnica dettagliata delle specifiche.
 *   `relazione_ai.md` - Relazione d'esame sull'uso dell'Intelligenza Artificiale.
-*   `discorso_esame.md` - Testo completo consigliato per l'esposizione orale dell'esame.
+
 
 ---
 
