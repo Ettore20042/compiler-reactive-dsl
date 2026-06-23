@@ -126,6 +126,9 @@ class ASTTransformer(Transformer):
         """Espressione moltiplicativa (*, /). Usa il folding per gestire catene come 2*3*4."""
         return self._fold_binops(args, meta)
 
+    def mod(self, meta, args):
+        return self._fold_binops(args, meta)
+
     # --- LETTERALI E VARIABILI ---
 
     def number(self, meta, args):

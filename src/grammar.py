@@ -45,6 +45,7 @@ expr_list: expr ("," expr)*                        // Lista di espressioni separ
 
 ?comp_expr: arith_expr (OP_REL arith_expr)*        // Confronto relazionale (>, <, ==, ecc.)
 ?arith_expr: term (OP_ADD term)*                   // Addizione e sottrazione (priorità bassa)
+?mod:number OP_MODULO number
 ?term: factor (OP_MUL factor)*                     // Moltiplicazione e divisione (priorità alta)
 
 # Le frecce "->" mappano i token a nomi di regola usati dal Transformer
@@ -61,7 +62,8 @@ call_expr: CNAME "(" expr_list? ")"                // Chiamata a funzione dentro
 # Operatori raggruppati per livello di precedenza
 OP_ADD: "+" | "-"                                  // Operatori additivi
 OP_MUL: "*" | "/"                                  // Operatori moltiplicativi
-OP_REL: ">" | "<" | ">=" | "<=" | "==" | "!="     // Operatori relazionali (producono bool)
+OP_REL: ">" | "<" | ">=" | "<=" | "==" | "!="
+ OP_MODULO:"%"                                                   // Operatori relazionali (producono bool)
 
 # Importazioni dai token comuni di Lark
 %import common.CNAME                               // Nomi di identificatori (lettere, cifre, underscore)
